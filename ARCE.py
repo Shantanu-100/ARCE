@@ -138,7 +138,7 @@ def generate_html(domain, results):
     html = f"""<!DOCTYPE html>
 <html>
 <head>
-<title>Recon Master Report - {domain}</title>
+<title>ARCE Master Report - {domain}</title>
 <style>
 /* ... (CSS Styles remain the same) ... */
 body {{
@@ -268,7 +268,7 @@ function sortTable(n) {{
 
 <body>
 
-<h1>🔍 Recon Master Report for {domain}</h1>
+<h1>🔍 ARCE Master Report for {domain}</h1>
 <p>Generated at: {timestamp}</p>
 
 <span class="badge blue">Total: {len(results)}</span>
@@ -424,7 +424,7 @@ async def main_runner(domain, runs):
     
     # Define file paths
     history_file = f"history_{domain}.json"
-    master_report_file = f"reconx_master_report_{domain}.html"
+    master_report_file = f"ARCE_master_report_{domain}.html"
 
     # Load existing history
     history = load_history(history_file)
