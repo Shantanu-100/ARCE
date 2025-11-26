@@ -4,15 +4,15 @@ ARCE is a powerful, asynchronous reconnaissance tool designed to go beyond a sin
 
 **✨ Features**
 
-Asynchronous Speed: Utilizes asyncio and aiohttp for high-speed, concurrent scanning of thousands of hosts.
+**Asynchronous Speed:** Utilizes asyncio and aiohttp for high-speed, concurrent scanning of thousands of hosts.
 
-Multi-Source Enumeration: Gathers subdomains from popular external sources like crt.sh, BufferOver, and HackerTarget to maximize discovery.
+**Multi-Source Enumeration:** Gathers subdomains from popular external sources like crt.sh, BufferOver, and HackerTarget to maximize discovery.
 
-Historical Tracking: Stores results from every scan run in a domain-specific JSON file (history_{domain}.json).
+**Historical Tracking:** Stores results from every scan run in a domain-specific JSON file (history_{domain}.json).
 
-Result Consolidation: Aggregates data from all historical runs, deduplicates entries, and uses the most recent data for the final report.
+**Result Consolidation:** Aggregates data from all historical runs, deduplicates entries, and uses the most recent data for the final report.
 
-Master HTML Report: Generates a single, clean, searchable, and sortable HTML report showing the final, consolidated view of all unique subdomains ever found.
+**Master HTML Report:** Generates a single, clean, searchable, and sortable HTML report showing the final, consolidated view of all unique subdomains ever found.
 
 **🚀 Installation and Setup**
 
