@@ -1,8 +1,8 @@
-ARCE: Archive, Reconnaissance, Consolidate, Enumerate
+**ARCE: Archive, Reconnaissance, Consolidate, Enumerate**
 
 ARCE is a powerful, asynchronous reconnaissance tool designed to go beyond a single scan. It automates the process of finding subdomains from multiple passive sources, actively checking their status, and—crucially—maintaining a persistent history of results for comparison and master reporting.
 
-✨ Features
+**✨ Features**
 
 Asynchronous Speed: Utilizes asyncio and aiohttp for high-speed, concurrent scanning of thousands of hosts.
 
@@ -14,20 +14,20 @@ Result Consolidation: Aggregates data from all historical runs, deduplicates ent
 
 Master HTML Report: Generates a single, clean, searchable, and sortable HTML report showing the final, consolidated view of all unique subdomains ever found.
 
-🚀 Installation and Setup
+**🚀 Installation and Setup**
 
-Prerequisites
+**Prerequisites**
 
 Python 3.8+
 
-Install Dependencies
+**Install Dependencies**
 
 ARCE relies on several external Python libraries for core functionality:
 
 pip install aiohttp beautifulsoup4 pandas tldextract
 
 
-⚙️ Usage
+**⚙️ Usage**
 
 ARCE is run from the command line, requiring the target domain as the first argument.
 
@@ -47,7 +47,7 @@ python arce.py target.com --runs 3
 
 Each run will update the history_target.com.json file and then generate a new master report based on the combined history.
 
-💾 Outputs
+**💾 Outputs**
 
 After running ARCE, two main files will be generated in the current directory:
 
@@ -63,7 +63,7 @@ Purpose: The final, clean, human-readable report.
 
 Contents: A searchable, sortable table that shows the unique subdomains found, their latest status code, title, and IP. Clicking the Status column header allows you to sort by status code (live sites first, followed by down sites).
 
-🧩 How Consolidation Works
+**🧩 How Consolidation Works**
 
 When you run ARCE with --runs N, the tool:
 
