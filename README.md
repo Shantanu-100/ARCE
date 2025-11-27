@@ -20,6 +20,23 @@ ARCE is a powerful, asynchronous reconnaissance tool designed to go beyond a sin
 
 Python 3.8+
 
+**Set up a Virtual Environment**
+It is highly recommended to use a virtual environment to manage the project's dependencies, keeping them separate from your global Python packages.
+
+# 1. Create the virtual environment (named 'venv')
+python3 -m venv venv
+
+# 2. Activate the virtual environment
+# On Linux/macOS:
+source venv/bin/activate
+
+# On Windows (Command Prompt):
+ venv\Scripts\activate.bat
+
+# On Windows (PowerShell):
+ venv\Scripts\Activate.ps1
+
+
 **Install Dependencies**
 
 ARCE relies on several external Python libraries for core functionality:
