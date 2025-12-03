@@ -81,21 +81,24 @@ async def resolve_ip(host):
         return None
 
 async def fetch_info(session, url):
-    # This function is slightly modified to capture a full dictionary for consistency
-    # (ASN capture is removed as it wasn't in the original scan_host output, but can be added later)
     try:
         async with session.get(url, timeout=TIMEOUT, allow_redirects=True) as r:
+            # 1. Read the text content
             text = await r.text(errors="ignore")
+            
+            # 2. Calculate the size of the text (in bytes)
+            page_size = len(r._body) if r._body is not None else 0 # More robust way to get body size
+            # Alternative: page_size = len(text.encode('utf-8')) 
+            
             soup = BeautifulSoup(text, "html.parser")
-
             title = soup.title.string.strip() if soup.title and soup.title.string else "N/A"
-            # server and tech headers are not used in the final report template, 
-            # so they are omitted for simplicity, matching the report table.
 
-            return r.status, title
+            # 3. Return the status, title, AND size
+            return r.status, title, page_size 
 
     except Exception:
-        return None, " "
+        # Return None for status and ' ' for title, and 0 for size if an error occurs
+        return None, " ", 0
 
 async def scan_host(session, host):
     ip = await resolve_ip(host)
@@ -103,11 +106,13 @@ async def scan_host(session, host):
     https_url = f"https://{host}"
     http_url = f"http://{host}"
 
-    status, title = await fetch_info(session, https_url)
+    # Unpack status, title, and page_size
+    status, title, page_size = await fetch_info(session, https_url) 
     scheme = "https"
 
     if not status:
-        status, title = await fetch_info(session, http_url)
+        # Try HTTP if HTTPS failed
+        status, title, page_size = await fetch_info(session, http_url) 
         scheme = "http"
 
     return {
@@ -116,7 +121,8 @@ async def scan_host(session, host):
         "ip": ip,
         "status_code": status,
         "title": title,
-        "asn": "N/A" # Defaulting ASN to N/A for now, as it requires another API call.
+        "page_size": page_size, # NEW FIELD
+        "asn": "N/A"
     }
 
 
@@ -140,7 +146,6 @@ def generate_html(domain, results):
 <head>
 <title>ARCE Master Report - {domain}</title>
 <style>
-/* ... (CSS Styles remain the same) ... */
 body {{
     font-family: Arial;
     background: #0f172a;
@@ -153,6 +158,10 @@ input {{
     padding: 10px;
     width: 300px;
     margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #f8fafc;
 }}
 
 table {{
@@ -163,11 +172,13 @@ table {{
 th, td {{
     padding: 10px;
     border-bottom: 1px solid #334155;
+    text-align: left;
 }}
 
 th {{
     background: #1e293b;
-    cursor: pointer; /* Add pointer to show columns are clickable */
+    cursor: pointer;
+    white-space: nowrap;
 }}
 
 tr:hover {{
@@ -179,6 +190,7 @@ tr:hover {{
     padding: 6px 12px;
     border-radius: 20px;
     margin-right: 10px;
+    font-weight: bold;
 }}
 
 .green {{ background: #22c55e; color:black; }}
@@ -197,6 +209,7 @@ function searchTable() {{
     var rows = document.querySelectorAll("tbody tr");
 
     rows.forEach(row => {{
+        // Check if content matches filter
         if (row.innerText.toLowerCase().includes(filter)) {{
             row.style.display = "";
         }} else {{
@@ -210,40 +223,55 @@ function sortTable(n) {{
     table = document.querySelector("table");
     switching = true;
 
-    // Set initial direction to ascending if not set
-    if (sortDirection[n] === undefined) {{
+    // Set initial direction
+    if (sortDirection[n] === undefined || sortDirection[n] === "desc") {{
         sortDirection[n] = "asc";
-    }} else if (sortDirection[n] === "asc") {{
-        sortDirection[n] = "desc";
     }} else {{
-        sortDirection[n] = "asc";
+        sortDirection[n] = "desc";
     }}
     
     var direction = sortDirection[n];
 
-    /* Make a loop that will continue until no switching has been done: */
+    /* Loop until no switching has been done: */
     while (switching) {{
         switching = false;
         rows = table.rows;
-        /* Loop through all table rows (except the first, which contains table headers): */
+        /* Loop through all table rows (except the header): */
         for (i = 1; i < (rows.length - 1); i++) {{
             shouldSwitch = false;
             
-            // Get the two elements you want to compare, one from current row and one from the next
+            // Get the two elements you want to compare
             x = rows[i].getElementsByTagName("TD")[n];
             y = rows[i + 1].getElementsByTagName("TD")[n];
             
-            // Extract the sortable value
-            var xValue = isNaN(x.innerHTML) ? x.innerHTML.toLowerCase() : Number(x.innerHTML);
-            var yValue = isNaN(y.innerHTML) ? y.innerHTML.toLowerCase() : Number(y.innerHTML);
+            // Extract inner HTML for comparison
+            var xContent = x.innerHTML;
+            var yContent = y.innerHTML;
+
+            var xValue;
+            var yValue;
 
             // Special handling for the Status column (index 2)
             if (n === 2) {{
-                // Convert "DOWN" to a high number (e.g., 999) so it appears at the end when sorting by code
-                xValue = (xValue === 'down') ? 999 : Number(x.innerHTML);
-                yValue = (yValue === 'down') ? 999 : Number(y.innerHTML);
+                // Convert "DOWN" to a high number for sorting
+                xValue = (xContent.toLowerCase() === 'down') ? 999 : Number(xContent);
+                yValue = (yContent.toLowerCase() === 'down') ? 999 : Number(yContent);
+            }} 
+            // NEW HANDLING for the Size (B) column (index 6)
+            else if (n === 6) {{
+                // Strip commas from the size field and convert to a number for accurate numeric sort
+                xValue = Number(xContent.replace(/,/g, ""));
+                yValue = Number(yContent.replace(/,/g, ""));
+            }} 
+            // General handling for other columns (Subdomain, URL, Title, IP, ASN)
+            else {{
+                // Default numeric or string comparison
+                // Check if the content is primarily numeric (ignoring non-numeric cells like 'N/A')
+                xValue = isNaN(xContent.replace(/[^0-9.]/g, '')) ? xContent.toLowerCase() : Number(xContent);
+                yValue = isNaN(yContent.replace(/[^0-9.]/g, '')) ? yContent.toLowerCase() : Number(yContent);
             }}
 
+            // Perform the comparison based on direction
             if (direction === "asc") {{
                 if (xValue > yValue) {{
                     shouldSwitch = true;
@@ -287,6 +315,7 @@ function sortTable(n) {{
             <th onclick="sortTable(3)">Title</th>
             <th onclick="sortTable(4)">IP</th>
             <th onclick="sortTable(5)">ASN</th>
+            <th onclick="sortTable(6)">Size (B)</th>
         </tr>
     </thead>
     <tbody>
@@ -299,6 +328,8 @@ function sortTable(n) {{
         title = r.get("title", "N/A")
         ip = r.get("ip", "N/A")
         asn = r.get("asn", "N/A")
+        # 💡 FIX: This line extracts the page_size from the result dictionary.
+        page_size = r.get("page_size", 0) 
 
         if status is None:
             status_text = "DOWN"
@@ -318,8 +349,7 @@ function sortTable(n) {{
 
             url_display = f"<a href='{url}' target='_blank'>{url}</a>"
 
-        # IMPORTANT: The status text is used as the sortable value, so we 
-        # must ensure the content is the status code for number sorting.
+        # IMPORTANT: The status text is used as the sortable value
         html += f"""
         <tr>
             <td>{sub}</td>
@@ -328,6 +358,7 @@ function sortTable(n) {{
             <td>{title}</td>
             <td>{ip}</td>
             <td>{asn}</td>
+            <td>{page_size:,}</td>
         </tr>
 """
 
